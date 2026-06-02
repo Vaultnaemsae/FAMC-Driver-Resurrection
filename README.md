@@ -4,25 +4,32 @@ FAMC made Liquid Foot MIDI controllers that were truly ahead of their time, but 
 
 Please note: this is not an official FAMC or FTDI procedure. It is a community workaround for keeping unsupported hardware usable.
 
+**This process assumes you are working inside a Windows 11 ARM VM in Parallels Desktop.**
+
 ## Prerequisites
 
-Download `FAMC Driver Resurrection.zip`. It contains three key items:
+Download `FAMC Driver Resurrection.zip`. It contains two PowerShell scripts:
 
-- `FTDIBUS.INF` — modified
-- `FTDIPORT.INF` — modified
-- PowerShell script: `sign-famc-lf-plus-arm64-driver.ps1`
+- `patch-famc-lf-plus-inf-files.ps1`
+- `sign-famc-lf-plus-arm64-driver.ps1`
 
-You will also need the original 64-bit LF+ Editor software installer:
+The original FAMC LF+ Editor installer, `SetupLF+Editor_64bit.exe`, is required, but is not included in this repository because it is third-party copyrighted software. Users must provide their own copy.
 
-`SetupLF+Editor_64bit.exe`
+You must also download the official FTDI Windows ARM64 driver yourself from FTDI:
 
-This installer is too large to include here.
+```text
+https://ftdichip.com/wp-content/uploads/2025/03/CDM-v2.12.36.20-Universal-Driver-for-ARM64-WHQL-Certified.zip
+```
 
-To create the `.cat` files and sign the driver, you must install **Visual Studio 2022 Build Tools**.
+It is strongly recommended that you download and extract the FTDI driver **inside the Windows 11 ARM VM**, not on macOS. This avoids file permission, path, quarantine, and copy/extraction issues between macOS and Windows.
+
+To create the `.cat` files and sign the driver, you must have **Visual Studio 2022 Build Tools** installed.
 
 Choose:
 
-`Desktop development with C++`
+```text
+Desktop development with C++
+```
 
 Make sure the following are selected:
 
@@ -35,7 +42,7 @@ I found it useful to separately install the latest **Windows 11 SDK** and **Wind
 
 ## Important Parallels VM setting
 
-If all your other files are now in place, before Windows test-signing mode is enabled, shut down the Windows VM and check the Parallels configuration.
+Before Windows test-signing mode is enabled, shut down the Windows VM and check the Parallels configuration.
 
 1. Shut down the Windows VM completely.
 2. Open the VM configuration.
@@ -45,12 +52,12 @@ If all your other files are now in place, before Windows test-signing mode is en
    ```text
    vm.efi.secureboot=0
    ```
-   
+
 5. Start the Windows VM again.
 
 This disables Secure Boot for the VM. It is required because Windows may refuse to enable test-signing mode while Secure Boot is active.
 
-If Secure Boot is still enabled, the script may fail when it tries to run:
+If Secure Boot is still enabled, the signing script may fail when it tries to run:
 
 ```powershell
 bcdedit /set testsigning on
@@ -58,50 +65,134 @@ bcdedit /set testsigning on
 
 ## Procedure
 
-1. Install the LF+ Editor from the original installer:
+### 1. Install the LF+ Editor
 
-   `SetupLF+Editor_64bit.exe`
+Install the LF+ Editor from the original installer:
 
-   In addition to installing the LF+ Editor software, it will also create a folder full of outdated drivers at the following location:
+```text
+SetupLF+Editor_64bit.exe
+```
 
-   `C:\Program Files\FAMC\Drivers`
+In addition to installing the LF+ Editor software, it will create a folder full of outdated drivers at the following location:
 
-   You may delete the old driver files if you wish, but keep the folder.
+```text
+C:\Program Files\FAMC\Drivers
+```
 
-2. Download the official FTDI Windows ARM64 driver here:
+You may delete the old driver files if you wish, but keep the folder.
 
-   `https://ftdichip.com/wp-content/uploads/2025/03/CDM-v2.12.36.20-Universal-Driver-for-ARM64-WHQL-Certified.zip`
+### 2. Download the official FTDI Windows ARM64 driver
 
-3. Extract the FTDI driver folder and shorten the extracted folder name to:
+Inside the Windows VM, download the official FTDI Windows ARM64 driver:
 
-   `ARM64`
+```text
+https://ftdichip.com/wp-content/uploads/2025/03/CDM-v2.12.36.20-Universal-Driver-for-ARM64-WHQL-Certified.zip
+```
 
-4. Place the newly named `ARM64` folder inside:
+The recommended download location is the Windows VM’s `Downloads` folder.
 
-   `C:\Program Files\FAMC\Drivers`
+The exact download/extraction location does not matter permanently, because the extracted folder will be moved in the next steps.
 
-   The resulting path should be:
+### 3. Extract and rename the FTDI driver folder
 
-   `C:\Program Files\FAMC\Drivers\ARM64`
+Extract the FTDI driver ZIP.
 
-5. Place the included PowerShell script inside:
+Rename the extracted folder to:
 
-   `C:\Program Files\FAMC\Drivers\ARM64`
+```text
+ARM64
+```
 
-   The script should be located here:
+After renaming, the folder should contain subfolders such as:
 
-   `C:\Program Files\FAMC\Drivers\ARM64\sign-famc-lf-plus-arm64-driver.ps1`
+```text
+Image
+x86
+```
 
-6. Replace the two `.inf` files inside:
+The important original FTDI INF files should be located here:
 
-   `C:\Program Files\FAMC\Drivers\ARM64\Image`
+```text
+ARM64\Image\ftdibus.inf
+ARM64\Image\ftdiport.inf
+```
 
-   with the two included modified `.inf` files:
+### 4. Move the ARM64 folder into the FAMC driver folder
 
-   - `FTDIBUS.INF`
-   - `FTDIPORT.INF`
+Move the renamed `ARM64` folder into:
 
-7. Open **PowerShell as Administrator** and execute:
+```text
+C:\Program Files\FAMC\Drivers
+```
+
+The final layout should be:
+
+```text
+C:\Program Files\FAMC\Drivers\ARM64
+C:\Program Files\FAMC\Drivers\ARM64\Image
+C:\Program Files\FAMC\Drivers\ARM64\x86
+```
+
+The original FTDI INF files should now be here:
+
+```text
+C:\Program Files\FAMC\Drivers\ARM64\Image\ftdibus.inf
+C:\Program Files\FAMC\Drivers\ARM64\Image\ftdiport.inf
+```
+
+### 5. Copy the repository scripts into the ARM64 folder
+
+Copy the two included PowerShell scripts into:
+
+```text
+C:\Program Files\FAMC\Drivers\ARM64
+```
+
+The folder should now contain:
+
+```text
+patch-famc-lf-plus-inf-files.ps1
+sign-famc-lf-plus-arm64-driver.ps1
+Image
+x86
+```
+
+### 6. Patch the official FTDI INF files
+
+Open **PowerShell as Administrator** and run:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+cd "C:\Program Files\FAMC\Drivers\ARM64"
+.\patch-famc-lf-plus-inf-files.ps1
+```
+
+The patch script adds support for the FAMC Liquid Foot / Liquid Router / X-Series device IDs present in the original FAMC-modified driver files:
+
+```text
+VID_0403&PID_87C0
+VID_0403&PID_87C1
+VID_0403&PID_87C2
+VID_0403&PID_87C3
+VID_0403&PID_87C4
+VID_0403&PID_87C5
+VID_0403&PID_87C6
+```
+
+This process has been tested with a Liquid Foot+ Series device using `VID_0403&PID_87C0`. The other included FAMC IDs are taken from the original FAMC-modified driver files but have not all been individually tested.
+
+The script also adds the required ARM64 catalog entries needed for signing.
+
+After patching, the device names should be set to:
+
+```text
+FAMC LF Controller
+FAMC LF+ Series
+```
+
+### 7. Sign the patched ARM64 driver package
+
+Open **PowerShell as Administrator** and run:
 
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
@@ -109,11 +200,40 @@ cd "C:\Program Files\FAMC\Drivers\ARM64"
 .\sign-famc-lf-plus-arm64-driver.ps1
 ```
 
-8. The script signs the ARM64 driver package and enables Windows test-signing mode.
+The signing script will:
 
-   If this is the first time enabling test-signing, reboot Windows before installing the driver.
+- generate new ARM64 catalog files
+- create or reuse a local test-signing certificate
+- trust that certificate locally
+- sign `ftdibus.cat`
+- sign `ftdiport.cat`
+- enable Windows test-signing mode
 
-9. After reboot, if you skipped the install step in the script, open **PowerShell as Administrator** again and execute:
+If this is the first time enabling test-signing mode, reboot Windows before installing the driver.
+
+### 8. Reboot Windows
+
+After the signing script has completed, reboot the Windows VM:
+
+```powershell
+shutdown /r /t 0
+```
+
+After reboot, confirm test-signing mode is enabled:
+
+```powershell
+bcdedit /enum
+```
+
+Look for:
+
+```text
+testsigning Yes
+```
+
+### 9. Install the signed driver
+
+Open **PowerShell as Administrator** and run:
 
 ```powershell
 cd "C:\Program Files\FAMC\Drivers\ARM64\Image"
@@ -121,33 +241,71 @@ pnputil /add-driver ".\ftdibus.inf" /install
 pnputil /add-driver ".\ftdiport.inf" /install
 ```
 
-10. Disconnect and reconnect the Liquid Foot USB cable.
+### 10. Connect the Liquid Foot device to the Windows VM
 
-    Make sure the FAMC device is connected to the **Windows VM**, not macOS, under the Parallels USB device menu/settings.
+Disconnect and reconnect the Liquid Foot USB cable.
 
-11. Open **Windows Device Manager** and check that the device has registered.
+In Parallels Desktop, make sure the device is assigned to the **Windows VM**, not macOS.
 
-    You should see entries similar to:
+### 11. Confirm Device Manager entries
 
-    - `FAMC LF Controller`
-    - `FAMC LF+ Series (COMx)`
+Open **Windows Device Manager** and check that the device has registered.
 
-    The COM number may vary.
+You should see entries similar to:
 
-12. Open the LF+ Editor and click **Connect**. Confirm operation.
+```text
+FAMC LF Controller
+FAMC LF+ Series (COMx)
+```
 
-13. You may exit test mode and reboot the device after you have confirmed correct operation.
+The COM number may vary.
+
+### 12. Open the LF+ Editor
+
+Open the LF+ Editor and click:
+
+```text
+Connect
+```
+
+Confirm that the editor can communicate with the device.
+
+### 13. Optional: exit test-signing mode after confirming operation
+
+After you have confirmed that the LF+ Editor connects correctly, you may exit Windows test-signing mode and reboot:
+
 ```powershell
 bcdedit /set testsigning off
 shutdown /r /t 0
 ```
-14. Additionally, you may remove the secure boot flag from your VM's advanced settings after the installation is complete and you have confirmed device connection. 
+
+If the driver stops working after exiting test-signing mode, re-enable test-signing mode:
+
+```powershell
+bcdedit /set testsigning on
+shutdown /r /t 0
+```
+
+### 14. Optional: restore Parallels Secure Boot setting
+
+After installation is complete and you have confirmed device connection, you may remove the Parallels boot flag from the VM’s advanced settings.
+
+Remove:
+
+```text
+vm.efi.secureboot=0
+```
+
+If restoring Secure Boot causes problems with the driver or with test-signing mode, add the flag again.
 
 ## Notes
 
-If the script fails while enabling test-signing mode, shut down the Windows VM, add `vm.efi.secureboot=0` to the Parallels Boot flags field, boot Windows again, and rerun the script.
+If the signing script fails while enabling test-signing mode, shut down the Windows VM, add `vm.efi.secureboot=0` to the Parallels Boot flags field, boot Windows again, and rerun the script.
 
 If the device does not appear in the LF+ Editor, disconnect and reconnect the USB cable, then confirm in Parallels that the USB device is assigned to Windows rather than macOS.
 
 This process uses a self-signed test certificate created locally inside the Windows VM. It is not an official Microsoft, FTDI, or FAMC driver signature.
 
+This repository does not include the original FAMC LF+ Editor installer or the original FTDI driver package. Users must provide the FAMC installer themselves and download the official FTDI ARM64 driver from FTDI.
+
+The included patch script targets the known FAMC/Liquid Foot FTDI hardware ID range `VID_0403&PID_87C0` through `VID_0403&PID_87C6`, based on the original FAMC-modified driver files. It should not be assumed to support unknown FAMC hardware using a different VID/PID.
